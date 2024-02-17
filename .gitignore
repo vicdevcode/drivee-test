@@ -8,3 +8,6 @@ bin
 # configs
 config/*
 !config/example.config.yaml
+
+# tests
+cmd/test

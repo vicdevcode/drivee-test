@@ -1,11 +1,12 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/vicdevcode/drivee-test/internal/alg"
 )
 
 func main() {
-	fmt.Println(alg.SetClusters())
+	clusters := alg.SetClusters()
+	for i := range clusters {
+		alg.HeldKapr(clusters[i].Cluster)
+	}
 }
