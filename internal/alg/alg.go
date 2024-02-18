@@ -23,7 +23,7 @@ func CreateCourierOrderMatrix(orders []entity.Order, couriers []entity.Courier) 
 	for _, courier := range couriers {
 		subMatrix := []float64{}
 		for _, order := range orders {
-			subMatrix = append(subMatrix, CalculateDistance(courier.Point, order.Start, order.End))
+			subMatrix = append(subMatrix, courier.Penalty*CalculateDistance(courier.Point, order.Start, order.End))
 		}
 		matrix = append(matrix, subMatrix)
 	}
@@ -109,19 +109,19 @@ func SetClusters() []entity.Cluster {
 
 		courierRow := []float64{0}
 		for _, order := range courier.Orders {
-			courierRow = append(courierRow, CalculateDistance(courier.Point, order.Start, order.End))
+			courierRow = append(courierRow, courier.Penalty*CalculateDistance(courier.Point, order.Start, order.End))
 		}
 		cluster = append(cluster, courierRow)
 
 		// Заполняем двумерную матрицу
 		for i, order := range courier.Orders {
-			cityRow := []float64{CalculateDistance(courier.Point, order.Start, order.End)}
+			cityRow := []float64{courier.Penalty * CalculateDistance(courier.Point, order.Start, order.End)}
 			for j, orderToOrder := range courier.Orders {
 				if j == i {
 					cityRow = append(cityRow, 0)
 					continue
 				}
-				cityRow = append(cityRow, CalculateDistance(
+				cityRow = append(cityRow, courier.Penalty*CalculateDistance(
 					order.End,
 					orderToOrder.Start,
 					orderToOrder.End,

@@ -191,24 +191,28 @@ func FakeData() ([]entity.Order, []entity.Courier) {
 			},
 		}, []entity.Courier{
 			{
-				ID:     0,
-				Point:  entity.Point{X: 2, Y: 8},
-				Orders: nil,
+				ID:      0,
+				Point:   entity.Point{X: 2, Y: 8},
+				Orders:  nil,
+				Penalty: 0.9,
 			},
 			{
-				ID:     1,
-				Point:  entity.Point{X: 13, Y: 16},
-				Orders: nil,
+				ID:      1,
+				Point:   entity.Point{X: 13, Y: 16},
+				Orders:  nil,
+				Penalty: 0.9,
 			},
 			{
-				ID:     2,
-				Point:  entity.Point{X: 11, Y: 4},
-				Orders: nil,
+				ID:      2,
+				Point:   entity.Point{X: 11, Y: 4},
+				Orders:  nil,
+				Penalty: 0.7,
 			},
 			{
-				ID:     3,
-				Point:  entity.Point{X: 2, Y: 16},
-				Orders: nil,
+				ID:      3,
+				Point:   entity.Point{X: 2, Y: 16},
+				Orders:  nil,
+				Penalty: 0.95,
 			},
 		}
 }
