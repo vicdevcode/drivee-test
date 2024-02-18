@@ -3,6 +3,8 @@ package alg
 import (
 	"math"
 
+	"github.com/arthurkushman/go-hungarian"
+
 	"github.com/vicdevcode/drivee-test/internal/entity"
 )
 
@@ -15,51 +17,84 @@ func CalculateDistance(First entity.Point, Start entity.Point, End entity.Point)
 	return fromFirstToStart + fromStartToEnd
 }
 
+// Матрица, где курьеры - строки, а заказы - столбцы
+func CreateCourierOrderMatrix(orders []entity.Order, couriers []entity.Courier) [][]float64 {
+	matrix := [][]float64{}
+	for _, courier := range couriers {
+		subMatrix := []float64{}
+		for _, order := range orders {
+			subMatrix = append(subMatrix, CalculateDistance(courier.Point, order.Start, order.End))
+		}
+		matrix = append(matrix, subMatrix)
+	}
+	return matrix
+}
+
+// Конвертируем матрицу в квадратичную матрицу, добавляя
+// фиктивных курьеров
+func ConvertToSquareMatrix(matrix [][]float64) [][]float64 {
+	squareMatrix := [][]float64{}
+	row := len(matrix)
+	column := len(matrix[0])
+	size := column
+	if row > column {
+		size = row
+	}
+	for i := 0; i < size; i++ {
+		temp := []float64{}
+		for j := 0; j < size; j++ {
+			temp = append(temp, 0)
+		}
+		squareMatrix = append(squareMatrix, temp)
+	}
+	for i := 0; i < row; i++ {
+		for j := 0; j < column; j++ {
+			squareMatrix[i][j] = matrix[i][j]
+		}
+	}
+
+	return squareMatrix
+}
+
+// Убираем заказы, которые были назначены курьерам,
+// заменяя все значения столбца заказа на максимальное число
+func RemoveVisitedOrder(matrix [][]float64, id int) [][]float64 {
+	for i := range matrix {
+		for j := range matrix[i] {
+			if j == id {
+				matrix[i][j] = math.MaxFloat64
+			}
+		}
+	}
+
+	return matrix
+}
+
 func SetClusters() []entity.Cluster {
 	orders, couriers := FakeData()
 
 	// Создаем временный список, чтобы не изменять оригинал
-	tempOrders := make([]entity.Order, len(orders))
-	copy(tempOrders, orders)
+	COMatrix := CreateCourierOrderMatrix(orders, couriers)
+	_ = COMatrix
 
-	// Алгоритм распределения
-	// Цикл while. Пока не удаляться все элементы tempOrders
-	// Будем дальше их распределять для каждого курьера
-	for len(tempOrders) > 0 {
-		for i := 0; i < len(couriers); i++ {
+	tempCOMatrix := make([][]float64, len(COMatrix))
+	copy(tempCOMatrix, COMatrix)
 
-			// кандидат на минимальную дистанцию между курьером и заказом
-			minCandidate := tempOrders[0]
-			minCandidateDistance := CalculateDistance(
-				couriers[i].Point,
-				tempOrders[0].Start,
-				tempOrders[0].End,
-			)
+	for a := 0; a < len(orders); a += len(couriers) {
+		sqMatrix := ConvertToSquareMatrix(tempCOMatrix)
 
-			if len(tempOrders) == 1 {
-				tempOrders[0].CourierID = &couriers[i].ID
-				couriers[i].Orders = append(couriers[i].Orders, tempOrders[0])
-				tempOrders = nil
-				break
+		hung := hungarian.SolveMin(sqMatrix)
+		for courierId, value := range hung {
+			if courierId >= len(couriers) {
+				continue
 			}
-
-			index := 0
-
-			for j, order := range tempOrders {
-				candidateDist := CalculateDistance(couriers[i].Point, order.Start, order.End)
-				if minCandidateDistance > candidateDist {
-					minCandidate = order
-					minCandidateDistance = candidateDist
-					index = j
+			for orderId, dist := range value {
+				if dist == 0 {
+					continue
 				}
-			}
-
-			minCandidate.CourierID = &couriers[i].ID
-			couriers[i].Orders = append(couriers[i].Orders, minCandidate)
-			if len(tempOrders) > 1 {
-				tempOrders[index] = tempOrders[len(tempOrders)-1]
-				tempOrders[len(tempOrders)-1] = entity.Order{}
-				tempOrders = tempOrders[:len(tempOrders)-1]
+				orders[orderId].CourierID = &courierId
+				couriers[courierId].Orders = append(couriers[courierId].Orders, orders[orderId])
+				tempCOMatrix = RemoveVisitedOrder(tempCOMatrix, orderId)
 			}
 		}
 	}
