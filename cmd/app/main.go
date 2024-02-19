@@ -2,11 +2,38 @@ package main
 
 import (
 	"fmt"
+	"net/http"
+
+	"github.com/gin-contrib/cors"
+	"github.com/gin-gonic/gin"
 
 	"github.com/vicdevcode/drivee-test/internal/alg"
+	"github.com/vicdevcode/drivee-test/pkg/config"
+	"github.com/vicdevcode/drivee-test/pkg/logger"
 )
 
 func main() {
+	cfg := config.MustLoad()
+
+	log := logger.New(cfg.Env)
+
+	log.Info(fmt.Sprintf("Starting server at Port: %s", cfg.Http.Port))
+
+	// HTTP SERVER
+	gin.SetMode(gin.ReleaseMode)
+	if cfg.Env == "local" {
+		gin.SetMode(gin.DebugMode)
+	}
+	router := gin.Default()
+
+	router.Use(cors.Default())
+
+	router.GET("/courier", betterPath)
+
+	router.Run()
+}
+
+func betterPath(c *gin.Context) {
 	orders, couriers := alg.FakeData()
 	if len(couriers) == 1 {
 		couriers[0].Orders = orders
@@ -43,4 +70,5 @@ func main() {
 	for _, courier := range couriers {
 		fmt.Println(courier)
 	}
+	c.JSON(http.StatusOK, couriers)
 }

@@ -10,8 +10,11 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@pbe/react-yandex-maps": "^1.2.5",
+    "axios": "^1.6.7",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "uniqolor": "^1.1.1"
   },
   "devDependencies": {
     "@types/react": "^18.2.55",
