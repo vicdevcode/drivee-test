@@ -17,7 +17,7 @@ func main() {
 
 	log := logger.New(cfg.Env)
 
-	log.Info(fmt.Sprintf("Starting server at Port: %s", cfg.Http.Port))
+	log.Info(fmt.Sprintf("Starting server at Port: %s", "8080"))
 
 	// HTTP SERVER
 	gin.SetMode(gin.ReleaseMode)

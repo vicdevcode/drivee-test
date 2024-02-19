@@ -1,8 +1,1 @@
 env: "local" # local, dev, prod
-context_timeout: 5s
-http:
-  port: "5000"
-  host: "localhost"
-  read_timeout: 5s
-  write_timeout: 5s
-  shutdown_timeout: 5s

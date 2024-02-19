@@ -9,6 +9,7 @@ Frontend: `vite, react, TypeScript, react-yandex-maps`
 
 Для запуска потребуется:
 
+- убрать `example` у `example.env`
 - установленный golang
 - установленный make (можно установить через choco install make)
 
@@ -16,6 +17,7 @@ Frontend: `vite, react, TypeScript, react-yandex-maps`
 `make run` - линукс, а для windows - `make run-windows`
 
 Для запуска фронтенда нужно:
+
 - nodejs
 - npm
 - npm install (в папке frontend)
@@ -44,4 +46,3 @@ Frontend: `vite, react, TypeScript, react-yandex-maps`
 Венгерский алгоритм назначит каждому курьеру по заказу, если заказов будет больше, чем курьеров, то цикл распределит заказы по всем курьерам столько, чтобы заказов без курьера не осталось. В итоге получим список заказов для каждого курьера. Этот список заказов прогоним по генетическому алгоритму и определим оптимальный путь от первого заказа до последнего.
 
 ![image](https://github.com/vicdevcode/drivee-test/assets/148728128/e1da173c-e762-4461-b362-6421d705af79)
-
