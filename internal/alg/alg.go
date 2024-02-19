@@ -1,87 +1,25 @@
 package alg
 
 import (
-	"math"
+	"sort"
 
 	"github.com/arthurkushman/go-hungarian"
 
 	"github.com/vicdevcode/drivee-test/internal/entity"
 )
 
-// Измеряем расстояние между 3 точками (C -> A -> B) либо (B -> A -> B).
-// Почему B в начале? Потому что B является концом заказа,
-// где окажется в итоге курьер
-func CalculateDistance(First entity.Point, Start entity.Point, End entity.Point) float64 {
-	fromFirstToStart := math.Sqrt(math.Pow(First.X-Start.X, 2) + math.Pow(First.Y-Start.Y, 2))
-	fromStartToEnd := math.Sqrt(math.Pow(End.X-Start.X, 2) + math.Pow(End.Y-Start.Y, 2))
-	return fromFirstToStart + fromStartToEnd
-}
-
-// Матрица, где курьеры - строки, а заказы - столбцы
-func CreateCourierOrderMatrix(orders []entity.Order, couriers []entity.Courier) [][]float64 {
-	matrix := [][]float64{}
-	for _, courier := range couriers {
-		subMatrix := []float64{}
-		for _, order := range orders {
-			subMatrix = append(subMatrix, courier.Penalty*CalculateDistance(courier.Point, order.Start, order.End))
-		}
-		matrix = append(matrix, subMatrix)
-	}
-	return matrix
-}
-
-// Конвертируем матрицу в квадратичную матрицу, добавляя
-// фиктивных курьеров
-func ConvertToSquareMatrix(matrix [][]float64) [][]float64 {
-	squareMatrix := [][]float64{}
-	row := len(matrix)
-	column := len(matrix[0])
-	size := column
-	if row > column {
-		size = row
-	}
-	for i := 0; i < size; i++ {
-		temp := []float64{}
-		for j := 0; j < size; j++ {
-			temp = append(temp, 0)
-		}
-		squareMatrix = append(squareMatrix, temp)
-	}
-	for i := 0; i < row; i++ {
-		for j := 0; j < column; j++ {
-			squareMatrix[i][j] = matrix[i][j]
-		}
-	}
-
-	return squareMatrix
-}
-
-// Убираем заказы, которые были назначены курьерам,
-// заменяя все значения столбца заказа на максимальное число
-func RemoveVisitedOrder(matrix [][]float64, id int) [][]float64 {
-	for i := range matrix {
-		for j := range matrix[i] {
-			if j == id {
-				matrix[i][j] = math.MaxFloat64
-			}
-		}
-	}
-
-	return matrix
-}
+// func OptimizeCouriers() entity.Courier {
+//
+// }
 
 func SetClusters() []entity.Cluster {
 	orders, couriers := FakeData()
 
-	// Создаем временный список, чтобы не изменять оригинал
 	COMatrix := CreateCourierOrderMatrix(orders, couriers)
-	_ = COMatrix
-
-	tempCOMatrix := make([][]float64, len(COMatrix))
-	copy(tempCOMatrix, COMatrix)
+	deletedId := []int{}
 
 	for a := 0; a < len(orders); a += len(couriers) {
-		sqMatrix := ConvertToSquareMatrix(tempCOMatrix)
+		sqMatrix := ConvertToSquareMatrix(COMatrix)
 
 		hung := hungarian.SolveMin(sqMatrix)
 		for courierId, value := range hung {
@@ -89,12 +27,25 @@ func SetClusters() []entity.Cluster {
 				continue
 			}
 			for orderId, dist := range value {
-				if dist == 0 {
-					continue
+				if dist > 0.0 {
+					id := orderId
+					for i := range deletedId {
+						if i == 0 {
+							if deletedId[i] <= id {
+								id++
+							}
+							continue
+						}
+						if deletedId[i] >= orderId {
+							id++
+						}
+					}
+					orders[orderId].CourierID = &courierId
+					couriers[courierId].Orders = append(couriers[courierId].Orders, orders[id])
+					COMatrix = RemoveVisitedOrder(COMatrix, orderId)
+					deletedId = append(deletedId, id)
+					sort.Ints(deletedId)
 				}
-				orders[orderId].CourierID = &courierId
-				couriers[courierId].Orders = append(couriers[courierId].Orders, orders[orderId])
-				tempCOMatrix = RemoveVisitedOrder(tempCOMatrix, orderId)
 			}
 		}
 	}
@@ -109,23 +60,24 @@ func SetClusters() []entity.Cluster {
 
 		courierRow := []float64{0}
 		for _, order := range courier.Orders {
-			courierRow = append(courierRow, courier.Penalty*CalculateDistance(courier.Point, order.Start, order.End))
+			courierRow = append(courierRow, calculateTime(courier.Speed, calculateDistance(courier.Coordinates, order.Start, order.End, courier.Penalty)))
 		}
 		cluster = append(cluster, courierRow)
 
 		// Заполняем двумерную матрицу
 		for i, order := range courier.Orders {
-			cityRow := []float64{courier.Penalty * CalculateDistance(courier.Point, order.Start, order.End)}
+			cityRow := []float64{calculateTime(courier.Speed, calculateDistance(courier.Coordinates, order.Start, order.End, courier.Penalty))}
 			for j, orderToOrder := range courier.Orders {
 				if j == i {
 					cityRow = append(cityRow, 0)
 					continue
 				}
-				cityRow = append(cityRow, courier.Penalty*CalculateDistance(
+				cityRow = append(cityRow, calculateTime(courier.Speed, calculateDistance(
 					order.End,
 					orderToOrder.Start,
 					orderToOrder.End,
-				))
+					courier.Penalty,
+				)))
 			}
 			cluster = append(cluster, cityRow)
 		}

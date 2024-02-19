@@ -11,6 +11,8 @@ func main() {
 	for _, cluster := range clusters {
 		if len(cluster.Cluster) > 2 {
 			fmt.Println(alg.SolveGA(len(cluster.Cluster), 10, cluster.Cluster))
+		} else {
+			fmt.Println(cluster)
 		}
 	}
 }

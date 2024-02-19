@@ -34,7 +34,7 @@ func repeat(genome []int, temp int) bool {
 	return false
 }
 
-func CreateGenome(V int) []int {
+func (individ *individual) createGenome(V int) {
 	genome := []int{0}
 	for {
 		if len(genome) == V {
@@ -46,13 +46,12 @@ func CreateGenome(V int) []int {
 			genome = append(genome, temp)
 		}
 	}
-
-	return genome
+	individ.genome = genome
 }
 
-func MutatedGen(genome []int, V int) []int {
-	mutGenome := make([]int, len(genome))
-	copy(mutGenome, genome)
+func (individ *individual) mutatedGen(V int) {
+	mutGenome := make([]int, len(individ.genome))
+	copy(mutGenome, individ.genome)
 	for {
 		r := randNum(1, V)
 		r1 := randNum(1, V)
@@ -63,18 +62,19 @@ func MutatedGen(genome []int, V int) []int {
 			break
 		}
 	}
-	return mutGenome
+	individ.genome = mutGenome
 }
 
-func CalFitness(genome []int, mp [][]float64) float64 {
+func (individ *individual) calFitness(mp [][]float64) {
 	f := 0.0
-	for i := 0; i < len(genome)-1; i++ {
-		if mp[genome[i]][genome[i+1]] == MAX {
-			return MAX
+	for i := 0; i < len(individ.genome)-1; i++ {
+		if mp[individ.genome[i]][individ.genome[i+1]] == MAX {
+			individ.fitness = MAX
+			return
 		}
-		f += mp[genome[i]][genome[i+1]]
+		f += mp[individ.genome[i]][individ.genome[i+1]]
 	}
-	return f
+	individ.fitness = f
 }
 
 func cooldown(temp float64) float64 {
@@ -84,7 +84,7 @@ func cooldown(temp float64) float64 {
 func SolveGA(V int, popSize int, mp [][]float64) (float64, []int) {
 	gen := 1
 
-	genThres := 100
+	genThres := 1000
 	population := []individual{}
 	temp := individual{
 		genome:  []int{},
@@ -92,14 +92,14 @@ func SolveGA(V int, popSize int, mp [][]float64) (float64, []int) {
 	}
 
 	for i := 0; i < popSize; i++ {
-		temp.genome = CreateGenome(V)
-		temp.fitness = CalFitness(temp.genome, mp)
+		temp.createGenome(V)
+		temp.calFitness(mp)
 		population = append(population, temp)
 	}
 
-	temperature := 10000.0
+	temperature := 100000000.0
 
-	for temperature > 1000 && gen <= genThres {
+	for temperature > 100 && gen <= genThres {
 		sort.Sort(ByFitness(population))
 		newPopulation := []individual{}
 
@@ -107,10 +107,10 @@ func SolveGA(V int, popSize int, mp [][]float64) (float64, []int) {
 			p1 := population[i]
 
 			for {
-				newG := MutatedGen(p1.genome, V)
 				newGenome := individual{}
-				newGenome.genome = newG
-				newGenome.fitness = CalFitness(newGenome.genome, mp)
+				newGenome.genome = p1.genome
+				newGenome.mutatedGen(V)
+				newGenome.calFitness(mp)
 
 				if newGenome.fitness <= population[i].fitness {
 					newPopulation = append(newPopulation, newGenome)

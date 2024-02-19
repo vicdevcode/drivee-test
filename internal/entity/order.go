@@ -1,8 +1,8 @@
 package entity
 
 type Order struct {
-	Start     Point
-	End       Point
+	Start     Coordinates
+	End       Coordinates
 	Price     int
 	CourierID *int
 }
