@@ -1,10 +1,11 @@
 package entity
 
 type Courier struct {
-	ID          int
-	Point       Point
-	Coordinates Coordinates
-	Orders      []Order
-	Penalty     float64
-	Speed       float64
+	ID           int
+	Coordinates  Coordinates
+	Orders       []Order
+	Path         []int
+	Penalty      float64
+	Speed        float64
+	FullPathTime float64
 }

@@ -1,6 +1,7 @@
 package alg
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/arthurkushman/go-hungarian"
@@ -8,48 +9,84 @@ import (
 	"github.com/vicdevcode/drivee-test/internal/entity"
 )
 
-// func OptimizeCouriers() entity.Courier {
-//
-// }
-
-func SetClusters() []entity.Cluster {
-	orders, couriers := FakeData()
-
+func HungarianAlg(orders []entity.Order, couriers []entity.Courier) ([]entity.Order, []entity.Courier) {
 	COMatrix := CreateCourierOrderMatrix(orders, couriers)
-	deletedId := []int{}
+	deletedIds := []int{}
 
+	// Цикл венгерского алгоритма
 	for a := 0; a < len(orders); a += len(couriers) {
 		sqMatrix := ConvertToSquareMatrix(COMatrix)
 
-		hung := hungarian.SolveMin(sqMatrix)
-		for courierId, value := range hung {
-			if courierId >= len(couriers) {
-				continue
-			}
-			for orderId, dist := range value {
-				if dist > 0.0 {
-					id := orderId
-					for i := range deletedId {
-						if i == 0 {
-							if deletedId[i] <= id {
-								id++
-							}
-							continue
-						}
-						if deletedId[i] >= orderId {
+		// назначаем курьеров
+		fmt.Println(sqMatrix)
+		if len(sqMatrix) == 2 && sqMatrix[1][1] != 0 {
+			for i := range couriers {
+				id := i
+				if len(deletedIds) >= len(couriers) {
+					if deletedIds[0] <= id {
+						id++
+					}
+					for i := 1; i < len(deletedIds)-len(deletedIds)%len(couriers); i++ {
+						if deletedIds[i] <= id {
 							id++
 						}
 					}
-					orders[orderId].CourierID = &courierId
-					couriers[courierId].Orders = append(couriers[courierId].Orders, orders[id])
-					COMatrix = RemoveVisitedOrder(COMatrix, orderId)
-					deletedId = append(deletedId, id)
-					sort.Ints(deletedId)
 				}
+				orders[id].CourierID = &couriers[i].ID
+				couriers[couriers[i].ID].Orders = append(couriers[couriers[i].ID].Orders, orders[id])
 			}
 		}
+
+		hung := hungarian.SolveMin(sqMatrix)
+		fmt.Println(hung)
+		// этот массив нужен для корректного удаления столбцов в COMatrix
+		wannaBeDeletedIds := []int{}
+		for courierId, path := range hung {
+			if courierId >= len(couriers) {
+				continue
+			}
+			for orderId, dist := range path {
+				if dist <= 0.0 {
+					continue
+				}
+				id := orderId
+				// После удаления стобцов матрицы, заказы могут потерять свою
+				// начальную очередность. Я проверяю, если индекс выше, чем первый
+				// удаленный индекс, то он увеличивается.
+
+				// Пример: 3x3 = [0, 1(удалили этот столбец), 2] => [0, 1]
+				// Если индекс выше или равен удаленому индексу, то индекс увеличивается
+				// один раз, тогда мы может определить изначальный порядок матрицы.
+				// [0, X, 2]. Видим, что тут был удален 1, но 0 и 2 не были удалены и мы
+				// можем корректно определить id заказов.
+				if len(deletedIds) >= len(couriers) {
+					if deletedIds[0] <= id {
+						id++
+					}
+					for i := 1; i < len(deletedIds)-len(deletedIds)%len(couriers); i++ {
+						if deletedIds[i] <= id {
+							id++
+						}
+					}
+				}
+				deletedIds = append(deletedIds, id)
+				wannaBeDeletedIds = append(wannaBeDeletedIds, orderId)
+				orders[id].CourierID = &courierId
+				couriers[courierId].Orders = append(couriers[courierId].Orders, orders[id])
+			}
+		}
+		sort.Ints(wannaBeDeletedIds)
+		for i := len(wannaBeDeletedIds) - 1; i >= 0; i-- {
+			realId := wannaBeDeletedIds[i]
+			COMatrix = RemoveVisitedOrder(COMatrix, realId)
+		}
+		sort.Ints(deletedIds)
 	}
 
+	return orders, couriers
+}
+
+func SetClusters(couriers []entity.Courier) []entity.Cluster {
 	// Кластеры для каждого курьера
 	clusters := []entity.Cluster{}
 

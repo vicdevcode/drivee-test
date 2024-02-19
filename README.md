@@ -2,7 +2,7 @@
 
 ## Стек технологий
 
-Backend: `golang, postgresql`
+Backend: `golang`
 Frontend: `vite, react, TypeScript`
 
 ## Задача
